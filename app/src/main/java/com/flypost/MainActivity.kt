@@ -1,8 +1,10 @@
 package com.flypost
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,42 +24,38 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import com.flypost.composables.DeliveriesScreen
+import com.flypost.composables.DeliveryInfoScreen
+import com.flypost.composables.TopBar
+import com.flypost.dataclasses.DeliverySerializable
+import com.flypost.dataclasses.deliveryToSerializable
+import com.flypost.http.Delivery
 import com.flypost.ui.theme.FlyPostTheme
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        getSharedPreferences("MyShP", MODE_PRIVATE).edit().putInt("client_id", 1).apply()
+
 
         setContent {
-            val email = remember{mutableStateOf("")}
-            FlyPostTheme {
-                val navController = rememberNavController()
-                //NavHost(navController = navController, startDestination = )
-                Scaffold(
-                    topBar = {TopBar()}
-                ){
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(it)
-                    ) {
-                        Column(
-                            modifier = Modifier.width(300.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text("Авторизуйтеся в системі")
-                            Spacer(modifier = Modifier.height(30.dp))
-                            TextField(
-                                value = email.value,
-                                onValueChange = { s: String -> email.value = s },
-                                placeholder = { Text("Email") },
-                                label = {Text("Електронна пошта")},
-                                maxLines = 1
-                            )
-                        }
-                    }
+            val navController = rememberNavController();
+            val app = this.application
+            NavHost(navController = navController, startDestination = DeliveriesScreen){
+                composable<DeliveriesScreen> {
+                    DeliveriesScreen(onClickDelivery = {
+                        navController.navigate(deliveryToSerializable(it))
+                    })
+                }
+                composable<DeliverySerializable> {
+                    DeliveryInfoScreen(
+                        deliverySerializable = it.toRoute<DeliverySerializable>(),
+                        application = app
+                    )
                 }
             }
         }
@@ -65,17 +63,40 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
+fun Auth() {
+    val email = remember{mutableStateOf("")}
+    FlyPostTheme {
+
+        Scaffold(
+            topBar = { TopBar() }
+        ){
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it)
+            ) {
+                Column(
+                    modifier = Modifier.width(300.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Авторизуйтеся в системі")
+                    Spacer(modifier = Modifier.height(30.dp))
+                    TextField(
+                        value = email.value,
+                        onValueChange = { s: String -> email.value = s },
+                        placeholder = { Text("Email") },
+                        label = {Text("Електронна пошта")},
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+    }
 }
 
-@Preview(showBackground = true)
+@Preview
 @Composable
-fun GreetingPreview() {
-    FlyPostTheme {
-        Greeting("Android")
-    }
+fun AuthPreview() {
+    Auth()
 }
